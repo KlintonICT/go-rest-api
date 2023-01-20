@@ -2,18 +2,30 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 func main() {
-	db, err := gorm.Open(sqlite.Open("book.db"), &gorm.Config{})
+	err := godotenv.Load()
+
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	GIN_MODE := os.Getenv("GIN_MODE")
+	DATABASE := os.Getenv("DATABASE")
+
+	db, err := gorm.Open(sqlite.Open(DATABASE), &gorm.Config{})
 
 	if err != nil {
 		panic("failed to connect database")
@@ -23,7 +35,9 @@ func main() {
 
 	handler := newHandler(db)
 
+	gin.SetMode(GIN_MODE)
 	r := gin.New()
+	r.SetTrustedProxies([]string{"http://localhost"})
 
 	r.POST("/login", loginHandler)
 
@@ -33,7 +47,7 @@ func main() {
 	protected.POST("/books", handler.createBookHandler)
 	protected.DELETE("/books/:id", handler.deleteBookHandler)
 
-	r.Run()
+	r.Run(":8080")
 }
 
 type Handler struct {
