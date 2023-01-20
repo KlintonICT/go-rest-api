@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -21,9 +25,13 @@ func main() {
 
 	r := gin.New()
 
-	r.GET("/books", handler.listBooksHandler)
-	r.POST("/books", handler.createBookHandler)
-	r.DELETE("/books/:id", handler.deleteBookHandler)
+	r.POST("/login", loginHandler)
+
+	protected := r.Group("/", authorizationMiddleware)
+
+	protected.GET("/books", handler.listBooksHandler)
+	protected.POST("/books", handler.createBookHandler)
+	protected.DELETE("/books/:id", handler.deleteBookHandler)
 
 	r.Run()
 }
@@ -85,4 +93,46 @@ func (h *Handler) deleteBookHandler(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+func loginHandler(c *gin.Context) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &jwt.StandardClaims{
+		ExpiresAt: time.Now().Add(5 * time.Minute).Unix(),
+	})
+
+	ss, err := token.SignedString([]byte("MySignature"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"token": ss,
+	})
+}
+
+func validateToken(token string) error {
+	_, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+		}
+
+		return []byte("MySignature"), nil
+	})
+
+	return err
+}
+
+func authorizationMiddleware(c *gin.Context) {
+	s := c.Request.Header.Get("Authorization")
+
+	token := strings.TrimPrefix(s, "Bearer ")
+
+	if err := validateToken(token); err != nil {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
 }

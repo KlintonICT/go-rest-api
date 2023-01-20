@@ -1,8 +1,13 @@
+POST http://localhost:8080/login
+###
+
 GET http://localhost:8080/books
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NzQxOTY0NjZ9.wvsT-_c5ISarhAtlGQaLKrmS4isngtKL4ugfj74EU30
 ###
 
 POST http://localhost:8080/books
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NzQxOTY0NjZ9.wvsT-_c5ISarhAtlGQaLKrmS4isngtKL4ugfj74EU30
 
 {
   "id": "4",
@@ -12,3 +17,5 @@ Content-Type: application/json
 ###
 
 DELETE http://localhost:8080/books/4
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NzQxOTY0NjZ9.wvsT-_c5ISarhAtlGQaLKrmS4isngtKL4ugfj74EU30
+###
